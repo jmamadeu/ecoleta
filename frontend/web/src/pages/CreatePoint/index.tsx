@@ -5,6 +5,8 @@ import { FiArrowLeft } from 'react-icons/fi';
 import { Map, TileLayer, Marker } from 'react-leaflet';
 import { LeafletMouseEvent } from 'leaflet';
 
+import DropZone from '../../components/DropZone';
+
 import api from '../../services/api';
 
 import './styles.css';
@@ -35,6 +37,7 @@ const CreatePoint: React.FC = () => {
   const [selectedUf, setSelectedUf] = useState<string>('0');
   const [selectedCity, setSelectedCity] = useState<string>('0');
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File>();
   const [seletedPosition, setSelectedPosition] = useState<[number, number]>([
     0,
     0,
@@ -126,30 +129,30 @@ const CreatePoint: React.FC = () => {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
 
+    const form = new FormData();
+
     const { email, name, whatsapp } = formData;
     const uf = selectedUf;
     const city = selectedCity;
     const items = selectedItems;
     const [latitude, longitude] = seletedPosition;
 
-    const data = {
-      email,
-      uf,
-      name,
-      whatsapp,
-      city,
-      items,
-      latitude,
-      longitude,
-    };
+    form.append('email', email);
+    form.append('uf', uf);
+    form.append('name', name);
+    form.append('whatsapp', whatsapp);
+    form.append('city', city);
+    form.append('items', items.join(','));
+    form.append('latitude', String(latitude));
+    form.append('longitude', String(longitude));
 
-    await api.post('/points', data);
+    if (selectedFile) form.append('image', selectedFile);
+
+    await api.post('/points', form);
 
     alert('Ponto de coleta criado!');
 
     history.push('/');
-
-    console.log(data);
   }
 
   return (
@@ -168,6 +171,8 @@ const CreatePoint: React.FC = () => {
           <h1>
             Cadastro do <br /> ponto de coleta
           </h1>
+
+          <DropZone onFileUploaded={setSelectedFile} />
 
           <fieldset>
             <legend>
