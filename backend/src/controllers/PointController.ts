@@ -12,17 +12,20 @@ class PointController {
     let { items } = req.body;
 
     items = await Promise.all(
-      items.map(async (item_id: number) => {
-        const item = await itemRepository.findOne(item_id);
+      items.split(',').map(async (item_id: number) => {
+        const item = await itemRepository.findOne(Number(item_id));
 
         return item;
       })
     );
 
+    const image = req.file.filename;
+
     let point = pointRepository.create({
       ...req.body,
-      image:
-        'https://images.unsplash.com/photo-1541855099555-42c6a7c57cfa?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60',
+      latitude: Number(req.body.latitude),
+      longitude: Number(req.body.longitude),
+      image,
       items,
     });
 
@@ -50,7 +53,12 @@ class PointController {
       .where('point_point_items.itemsId IN (:...ids)', { ids: parseItems })
       .getMany();
 
-    return res.json(points);
+    return res.json(
+      points.map((point) => ({
+        ...point,
+        image: `http://192.168.100.4:3333/uploads/${point.image}`,
+      }))
+    );
   }
 
   async show(req: Request, res: Response) {
@@ -65,7 +73,10 @@ class PointController {
       return res.status(400).json({ message: 'Point not found' });
     }
 
-    return res.json(point);
+    return res.json({
+      ...point,
+      image: `http://192.168.100.4:3333/uploads/${point.image}`,
+    });
   }
 }
 
